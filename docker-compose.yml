@@ -1,0 +1,88 @@
+version: '3.3'
+
+services:
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+    container_name: trg_elasticsearch
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  kibana:
+    container_name: trg_kibana
+    image: docker.elastic.co/kibana/kibana:7.4.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+
+  spark:
+    image: bitnami/spark:2.4.4
+    container_name: trg_sparkmaster
+    user: root
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./target/scala-2.11/trg_2.11-0.1.jar:/opt/bitnami/spark/work/trg_2.11-0.1.jar
+      - ./files:/opt/bitnami/spark/work/files
+      - ./lib:/opt/bitnami/spark/work/lib
+
+  spark-worker-1:
+    image: bitnami/spark:2.4.4
+    container_name: trg_sparkworker1
+    user: root
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./target/scala-2.11/trg_2.11-0.1.jar:/opt/bitnami/spark/work/trg_2.11-0.1.jar
+      - ./files:/opt/bitnami/spark/work/files
+      - ./lib:/opt/bitnami/spark/work/lib
+
+  spark-worker-2:
+    image: bitnami/spark:2.4.4
+    container_name: trg_sparkworker2
+    user: root
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./target/scala-2.11/trg_2.11-0.1.jar:/opt/bitnami/spark/work/trg_2.11-0.1.jar
+      - ./files:/opt/bitnami/spark/work/files
+      - ./lib:/opt/bitnami/spark/work/lib
+
+
+
