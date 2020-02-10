@@ -12,7 +12,23 @@ Start the docker services
 ```shell script
 docker-compose up -d
 ```  
-In order to run the spark job execute:  
+
+Before running the spark job go to [kibana dev mode](http://localhost:5601/app/kibana#/dev_tools/console?_g=()) and set type for location
+```shell script
+PUT /police_uk
+{
+  "mappings": {
+    "properties": {
+      "location":    { 
+        "type": "geo_point"
+      }
+    }
+  }
+}
+```
+If there are any error you can try to delete the mapped index `DELETE /police_uk`  
+Now we can run the spark job.  
+In order to run the spark job we should execute:  
 ```shell script
 docker exec -it trg_sparkmaster spark-submit \
   --class com.trg.assignment.Main \
@@ -46,4 +62,14 @@ GET /_search
         }
     }
 }
+
+GET /_search
+{
+    "query": {
+      "match_phrase_prefix": {
+        "districtName": "bed"
+      }
+    }
+}
+
 ```

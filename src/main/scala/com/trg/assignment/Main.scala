@@ -18,10 +18,11 @@ object Main extends App {
     .csv("/opt/bitnami/spark/work/files/*/*-outcomes.csv")
     .select("Crime ID", "Outcome type")
 
-
   spark.udf.register("get_street_name",
     (path: String) => path.split("/").last.split("\\.").head.substring(8)
       .replace("street", "").replace("-", " "))
+
+  spark.udf.register("geohash", (latitude: Double, longitude: Double) => GeohashUtil.encode(latitude, longitude))
 
   val dfStreet_filtered = dfStreet.withColumn("districtName", callUDF("get_street_name", input_file_name()))
     .select("Crime ID", "districtName", "Longitude", "Latitude", "Crime type", "Last outcome category")
@@ -34,7 +35,8 @@ object Main extends App {
     .withColumnRenamed("Latitude", "latitude")
     .withColumnRenamed("Crime type", "crimeType")
     .withColumnRenamed("Outcome type", "lastOutcome")
-    .saveToEs("/police_uk/outcomes")
+    .withColumn("location", callUDF("geohash", col("latitude"),col("longitude")))
+    .saveToEs("/police_uk")
 
   spark.close()
 
